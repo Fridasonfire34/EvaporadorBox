@@ -1,257 +1,231 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
-    ScrollView,
-    TextInput,
-    ImageBackground,
-    Dimensions
+    Image,
+    Dimensions,
+    Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 const PesosScreen = () => {
-    const navigation = useNavigation();
     const route = useRoute();
-    const { fecha, job } = route.params || {};
+    const { job } = route.params || {};
+    const navigation = useNavigation();
+    const [activeButton, setActiveButton] = useState<number | null>(null);
+    const [statusTapaOK, setStatusTapaOK] = useState(false);
+    const [statusCuerpoOK, setStatusCuerpoOK] = useState(false);
+    const [statusBaseOK, setStatusBaseOK] = useState(false);
+    const [user, setUser] = useState<any>(null);
 
-    const [data, setData] = useState({
-        item: '',
-        fecha: fecha || '',
-        operador: '',
-        ensamble: '',
-        temperatura: '',
-        pesoAntes: '',
-        pesoDespues: '',
-        maquinado: '',
-        termometroId: '',
-    });
+    useEffect(() => {
+        const loadUserData = async () => {
+            const userData = await AsyncStorage.getItem('user');
+            if (userData) {
+                setUser(JSON.parse(userData));
+            }
+        };
 
-    const handleChange = (field, value) => {
-        setData(prev => ({ ...prev, [field]: value }));
+        const fetchPesosStatus = async () => {
+            try {
+                const response = await fetch('http://192.168.16.192:3002/api/evaporador/getPesos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job }),
+                });
+
+                if (!response.ok) throw new Error('Error al consultar getPesos');
+
+                const data = await response.json();
+
+                if (data.statusTapas === 'OK') setStatusTapaOK(true);
+                if (data.statusCuerpo === 'OK') setStatusCuerpoOK(true);
+                if (data.statusBase === 'OK') setStatusBaseOK(true);
+            } catch (error) {
+                console.error('Error al consultar getPesos:', error);
+                Alert.alert('Error', 'No se pudo obtener el estado de pesos. Intenta más tarde.');
+            }
+        };
+
+        loadUserData();
+        fetchPesosStatus();
+    }, []);
+
+    const buttons = [
+        { id: 0, label: 'Registro de Pesos y Espumado: TAPA', screen: 'PesosTapaScreen' },
+        { id: 1, label: 'Registro de Pesos y Espumado: CUERPO', screen: 'PesosCuerpoScreen' },
+        { id: 2, label: 'Registro de Pesos y Espumado: BASE', screen: 'PesosBaseScreen' },
+    ];
+
+    const handlePress = (id: number, screen: string | null) => {
+        setActiveButton(id);
+        if (screen) {
+            navigation.navigate(screen as never, { job } as never);
+        }
     };
 
-    const onSave = () => {
-        console.log('Guardando datos:', data);
-        // Aquí podrías enviar a backend o navegar a otra pantalla.
-    };
+    if (!user) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.loadingText}>Cargando datos del usuario...</Text>
+            </View>
+        );
+    }
 
     return (
-        <ImageBackground source={require('../assets/bg1-eb.jpg')} style={{ flex: 1 }}>
-            <View style={styles.headerBox}>
-                <Text style={styles.headerText}>Registro de Pesos y Espumado</Text>
-            </View>
-
-            {/* Job y Fecha */}
+        <View style={styles.container}>
+            {/* Job Info */}
             <View style={styles.infoRow}>
-                <Text style={styles.bold2}>FECHA: </Text>
-                <Text style={styles.normal}>{fecha}      </Text>
                 <Text style={styles.bold2}>JOB: </Text>
                 <Text style={styles.normal}>{job}</Text>
+                <Text style={styles.welcomeText}>{user.Nomina}</Text>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Item - Fecha */}
-                <View style={[styles.rowPair, { width: width * 0.9 }]}>
-                    <View style={styles.pairItem}>
-                        <Text style={styles.label}>Item:</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={data.item}
-                            onChangeText={text => handleChange('item', text)}
-                        />
-                    </View>
-                    <View style={styles.pairItem}>
-                        <Text style={styles.label}>Fecha:</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={data.fecha}
-                            onChangeText={text => handleChange('fecha', text)}
-                        />
-                    </View>
-                </View>
+            <View style={styles.buttonContainer}>
+                {buttons.map((button) => {
+                    const isPressed = activeButton === button.id;
+                    const isAutoActive =
+                        (button.id === 0 && statusTapaOK) ||
+                        (button.id === 1 && statusCuerpoOK) ||
+                        (button.id === 2 && statusBaseOK);
 
-                {/* Operador - Ensamble */}
-                <View style={[styles.rowPair, { width: width * 0.9 }]}>
-                    <View style={styles.pairItem}>
-                        <Text style={styles.label}>Operador:</Text>
-                        <TextInput
-                            style={[styles.input, { width: 100 }]} // 👈 Aquí defines el ancho deseado
-                            value={data.operador}
-                            onChangeText={text => handleChange('operador', text)}
-                        />
-                    </View>
-                    <View style={styles.pairItemASSY}>
-                        <Text style={styles.label}>Ensamble: Tapa/Cuerpo/Base:</Text>
-                        <TextInput
-                            style={[styles.input, { width: 160 }]}
-                            value={data.ensamble}
-                            onChangeText={text => handleChange('ensamble', text)}
-                        />
-                    </View>
-                </View>
+                    const isActive = isPressed || isAutoActive;
 
-                {/* Temperatura */}
-                <Text style={styles.label}>Temperatura de Molde °F</Text>
-                <Text style={styles.subLabel}>Tolerancia 105° - 125°:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={data.temperatura}
-                    onChangeText={text => handleChange('temperatura', text)}
-                    keyboardType="numeric"
-                />
-
-                {/* Pesos */}
-                <Text style={styles.labelPesos}>Pesos (Libras):</Text>
-                <View style={[styles.rowPair, { width: width * 0.9 }]}>
-                    <View style={styles.pairItem}>
-                        <Text style={styles.label}>Antes:</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={data.pesoAntes}
-                            onChangeText={text => handleChange('pesoAntes', text)}
-                            keyboardType="numeric"
-                        />
-                    </View>
-                    <View style={styles.pairItem}>
-                        <Text style={styles.label}>Después:</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={data.pesoDespues}
-                            onChangeText={text => handleChange('pesoDespues', text)}
-                            keyboardType="numeric"
-                        />
-                    </View>
-                </View>
-
-                {/* Maquinado - Termómetro */}
-                <View style={[styles.rowPair, { width: width * 0.9 }]}>
-                    <View style={styles.pairItemME}>
-                        <Text style={styles.label}>Maquinado Espumado:</Text>
-                        <TextInput
-                            style={[styles.input, { width: 150 }]}
-                            value={data.maquinado}
-                            onChangeText={text => handleChange('maquinado', text)}
-                        />
-                    </View>
-                    <View style={styles.pairItem}>
-                        <Text style={styles.label}>ID Termómetro:</Text>
-                        <TextInput
-                            style={[styles.input, { width: 140 }]}
-                            value={data.termometroId}
-                            onChangeText={text => handleChange('termometroId', text)}
-                        />
-                    </View>
-                </View>
-
-                {/* Guardar */}
-                <TouchableOpacity style={styles.saveButton} onPress={onSave}>
-                    <Text style={styles.saveButtonText}>Guardar</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        </ImageBackground >
+                    return (
+                        <TouchableOpacity
+                            key={button.id}
+                            style={[styles.button, isActive && styles.activeButton]}
+                            onPress={() => handlePress(button.id, button.screen)}
+                        >
+                            <View style={styles.contentRow}>
+                                <Image
+                                    source={require('../assets/checklist.png')}
+                                    style={styles.buttonImage}
+                                />
+                                <Text style={[styles.buttonText, isActive && styles.activeButtonText]}>
+                                    {button.label}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </View>
     );
 };
-
-const styles = StyleSheet.create({
-    scrollContent: {
-        flexGrow: 1,
-        paddingBottom: 50,
-        paddingHorizontal: 20,
-    },
-    headerBox: {
-        backgroundColor: '#0011ff',
-        padding: 15,
-        alignItems: 'center',
-    },
-    headerText: {
-        color: '#fff',
-        fontSize: 22,
-        fontWeight: 'bold',
-    },
-    infoRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#000',
-        paddingVertical: 5,
-    },
-    normal: {
+    
+    const styles = StyleSheet.create({
+        loadingText: {
         fontSize: 14,
-        color: 'white',
+        textAlign: 'center',
+        marginTop: 80,
     },
-    bold2: {
-        fontWeight: 'bold',
-        fontSize: 14,
-        color: 'white',
-    },
-    label: {
+    welcomeText: {
+        position: 'absolute',
+        right: 15,
+        top: 15,
+        color: '#ffffffff',
         fontSize: 14,
         fontWeight: 'bold',
-        marginBottom: 4,
     },
-    labelPesos: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginBottom: 4,
-        marginTop: 15,
-        textAlign: 'center'
-    },
-    subLabel: {
-        fontSize: 12,
-        marginBottom: 4,
-        fontStyle: 'italic',
-        color: '#444',
-    },
-    rowPair: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 15,
-    },
-    pairItem: {
-        width: '40%',
-    },
-    pairItemASSY: {
-        width: '65%',
-    },
-    pairItemME: {
-        width: '60%',
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#999',
-        borderRadius: 6,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        fontSize: 14,
-        backgroundColor: '#fff',
-    },
-    inputOp: {
-        borderWidth: 1,
-        borderColor: '#999',
-        borderRadius: 6,
-        paddingHorizontal: 8,
-        paddingVertical: 8,
-        fontSize: 14,
-        backgroundColor: '#fff',
-    },
-    saveButton: {
-        backgroundColor: '#0011ff',
-        padding: 15,
-        borderRadius: 8,
-        marginTop: 20,
-        alignItems: 'center',
-    },
-    saveButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-});
+        container: {
+            flex: 1,
+            backgroundColor: '#fff',
+            paddingTop: 10,
+        },
+        header: {
+            position: 'absolute',
+            top: 10,
+            alignItems: 'center',
+            width: '100%',
+        },
+        text: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 25,
+        },
+        buttonContainer: {
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+            paddingTop: 100
+        },
+        button: {
+            backgroundColor: '#0000beff',
+            paddingVertical: 10,
+            borderRadius: 10,
+            marginVertical: 10,
+            width: '80%',
+            height: 100,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderColor: 'white',
+            borderWidth: 2,
+        },
+        contentRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        buttonText: {
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: '600',
+        },
+        activeButton: {
+            backgroundColor: '#ffffff',
+            borderColor: 'blue',
+            borderWidth: 2,
+        },
+        activeButtonText: {
+            color: '#000000',
+        },
+        buttonImage: {
+            width: 80,
+            height: 80,
+            marginRight: 2,
+            resizeMode: 'contain',
+        },
+        buttonImageRegistro: {
+            width: 60,
+            height: 60,
+            marginRight: 2,
+            resizeMode: 'contain',
+        },
+        buttonImageCamera: {
+            width: 50,
+            height: 50,
+            marginRight: 2,
+            resizeMode: 'contain',
+        },
+        infoRow: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginBottom: 10,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        RegisterRow: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginBottom: 10,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        normal: {
+            fontSize: 24,
+            color: 'black'
+        },
+        bold2: {
+            fontWeight: 'bold',
+            fontSize: 24,
+            color: 'black'
+        },
+    });
 
 export default PesosScreen;

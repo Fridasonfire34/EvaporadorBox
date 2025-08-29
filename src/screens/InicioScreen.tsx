@@ -3,26 +3,63 @@ import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     FlatList,
     ActivityIndicator,
     TouchableOpacity,
+    Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const InicioScreen = () => {
+    const [user, setUser] = useState<any>(null);
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
-    const [jobsData, setJobsData] = useState([
-        { id: '1', fecha: '2025-08-01', job: 'JOB-001' },
-        { id: '2', fecha: '2025-08-02', job: 'JOB-002' },
-        { id: '3', fecha: '2025-08-03', job: 'JOB-003' },
-    ]);
+    const [jobsData, setJobsData] = useState([]);
+
+    useEffect(() => {
+        const loadUserData = async () => {
+            const userData = await AsyncStorage.getItem('user');
+            if (userData) {
+                setUser(JSON.parse(userData));
+            }
+        };
+
+        loadUserData();
+        fetchJobsFromAPI();
+    }, []);
+
+    const fetchJobsFromAPI = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('http://192.168.16.192:3002/api/evaporador/job');
+            if (!response.ok) {
+                throw new Error('Error al obtener los jobs');
+            }
+            const data = await response.json();
+
+            setJobsData(data.jobs || data);
+        } catch (error) {
+            console.error('Error al cargar jobs:', error);
+            Alert.alert('Error', 'No se pudieron cargar los jobs. Intenta más tarde.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!user) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.loadingText}>Cargando datos del usuario...</Text>
+            </View>
+        );
+    }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.container}>
             <View style={styles.headerBox}>
                 <Text style={styles.headerText}>Evaporador BOX</Text>
+                <Text style={styles.welcomeText}> {user.Nomina}</Text>
             </View>
             {/* DRAIN PAN */}
             <View style={styles.sectionBox}>
@@ -37,30 +74,35 @@ const InicioScreen = () => {
 
                         {/* Filas */}
                         <FlatList
-                            data={jobsData}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    onPress={() => navigation.navigate('Menu', {
-                                        fecha: item.fecha,
-                                        job: item.job,
-                                    })}
-                                >
-                                    <View style={styles.tableRow}>
-                                        <Text style={styles.tableCell}>{item.job}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                        />
+    data={jobsData}
+    keyExtractor={(item, index) => index.toString()}
+    renderItem={({ item }) => (
+        <TouchableOpacity
+            onPress={() => navigation.navigate('Menu', {
+                job: item["Job Number"],
+                nomina: user.Nomina,
+            })}
+        >
+            <View style={styles.tableRow}>
+                <Text style={styles.tableCell}>{item["Job Number"]}</Text>
+            </View>
+        </TouchableOpacity>
+    )}
+/>
                     </>
                 )}
             </View>
-        </ScrollView>
+        </View>
     );
 };
 
 
 const styles = StyleSheet.create({
+     loadingText: {
+        fontSize: 14,
+        textAlign: 'center',
+        marginTop: 80,
+    },
     container: {
         backgroundColor: '#fff',
     },
@@ -68,11 +110,21 @@ const styles = StyleSheet.create({
         backgroundColor: '#0011ffff',
         padding: 15,
         marginBottom: 1,
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
     },
     headerText: {
         color: '#fff',
         fontSize: 22,
+        fontWeight: 'bold',
+    },
+    welcomeText: {
+        position: 'absolute',
+        right: 15,
+        top: 15,
+        color: '#fff',
+        fontSize: 14,
         fontWeight: 'bold',
     },
     sectionBox: {
@@ -102,7 +154,6 @@ const styles = StyleSheet.create({
         marginTop: 5,
         paddingBottom: 20,
     },
-
     tableHeader: {
         flexDirection: 'row',
         ///backgroundColor: '#0011ffff',
@@ -125,7 +176,7 @@ const styles = StyleSheet.create({
 
     tableCell: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 16,
         paddingHorizontal: 5,
     },
 
