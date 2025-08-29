@@ -87,7 +87,7 @@ const MasterScreen = () => {
                             checkboxes: checkedItems,
                             comentarios
                           };
-                        try { const response = await fetch('http://192.168.16.192:3002/api/evaporador/incompleteMaster',{
+                        try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteMaster',{
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ const MasterScreen = () => {
               comentarios
             });
             
-                    try { const response = await fetch ('http://192.168.16.192:3002/api/evaporador/completeMaster', {
+                    try { const response = await fetch ('http://192.168.16.146:3002/api/evaporador/completeMaster', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

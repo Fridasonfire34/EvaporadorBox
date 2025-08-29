@@ -88,7 +88,7 @@ const PesosBaseScreen = () => {
                     aprobado: approvalStatus === 'approved' ? 'SI' : 'NO'
                 };
         
-                const response = await fetch('http://192.168.16.192:3002/api/evaporador/pesosBase', {
+                const response = await fetch('http://192.168.16.146:3002/api/evaporador/pesosBase', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

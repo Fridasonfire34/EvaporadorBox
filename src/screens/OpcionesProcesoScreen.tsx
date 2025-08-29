@@ -32,7 +32,7 @@ const OpcionesProcesoScreen = () => {
 
         const fetchPesosStatus = async () => {
             try {
-                const response = await fetch('http://192.168.16.192:3002/api/evaporador/getProcesos', {
+                const response = await fetch('http://192.168.16.146:3002/api/evaporador/getProcesos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ job }),

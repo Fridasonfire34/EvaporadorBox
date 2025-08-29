@@ -95,7 +95,7 @@ const LIDScreen = () => {
                 modelo: modeloValue,
                 comentarios
               };
-            try { const response = await fetch('http://192.168.16.192:3002/api/evaporador/incompleteLid',{
+            try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteLid',{
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -124,7 +124,7 @@ const LIDScreen = () => {
 
 const handleComplete = async () => {
     try {
-        await fetch('http://192.168.16.192:3002/api/evaporador/completeLid', {
+        await fetch('http://192.168.16.146:3002/api/evaporador/completeLid', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

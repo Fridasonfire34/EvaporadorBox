@@ -88,7 +88,7 @@ const BottomScreen = () => {
                         checkboxes: checkedItems,
                         comentarios
                       };
-                    try { const response = await fetch('http://192.168.16.192:3002/api/evaporador/incompleteBottom',{
+                    try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteBottom',{
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ const BottomScreen = () => {
           comentarios
         });
         
-                try { const response = await fetch ('http://192.168.16.192:3002/api/evaporador/completeBottom', {
+                try { const response = await fetch ('http://192.168.16.146:3002/api/evaporador/completeBottom', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

@@ -77,7 +77,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
                     checkboxes: checkedItems,
                     comentarios
                   };
-                try { const response = await fetch('http://192.168.16.192:3002/api/evaporador/incompleteTop',{
+                try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteTop',{
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
   comentarios
 });
 
-        try { const response = await fetch ('http://192.168.16.192:3002/api/evaporador/completeTop', {
+        try { const response = await fetch ('http://192.168.16.146:3002/api/evaporador/completeTop', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

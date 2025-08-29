@@ -44,7 +44,7 @@ const EvidenciasScreen = () => {
   if (!job) return;
 
   try {
-    const response = await fetch(`http://192.168.16.192:3002/api/evaporador/carpetasPorJob?job=${encodeURIComponent(job)}`);
+    const response = await fetch(`http://192.168.16.146:3002/api/evaporador/carpetasPorJob?job=${encodeURIComponent(job)}`);
     if (!response.ok) {
       throw new Error('No se pudo obtener la lista de carpetas');
     }
@@ -76,7 +76,7 @@ const openRenameModal = (folderName: string) => {
   if (!newName || !job) return;
 
   try {
-    const response = await fetch(`http://192.168.16.192:3002/api/evaporador/renombrarCarpeta`, {
+    const response = await fetch(`http://192.168.16.146:3002/api/evaporador/renombrarCarpeta`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -120,7 +120,7 @@ const confirmDeleteFolder = (folderName: string) => {
 
 const deleteFolder = async (folderName: string) => {
   try {
-    const response = await fetch(`http://192.168.16.192:3002/api/evaporador/eliminarCarpeta?job=${encodeURIComponent(job)}&carpeta=${encodeURIComponent(folderName)}`, {
+    const response = await fetch(`http://192.168.16.146:3002/api/evaporador/eliminarCarpeta?job=${encodeURIComponent(job)}&carpeta=${encodeURIComponent(folderName)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ const deleteFolder = async (folderName: string) => {
   if (folderName === '') return;
 
   try {
-    const response = await fetch('http://192.168.16.192:3002/api/evaporador/crearCarpeta', {
+    const response = await fetch('http://192.168.16.146:3002/api/evaporador/crearCarpeta', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -186,7 +186,7 @@ const deleteFolder = async (folderName: string) => {
 const fetchEvidencias = async (job: string, folderName: string) => {
   setLoadingImages(true); // Mostrar loader
   try {
-    const response = await fetch(`http://192.168.16.192:3002/api/evaporador/getEvidencias?job=${encodeURIComponent(job)}&carpeta=${encodeURIComponent(folderName)}`);
+    const response = await fetch(`http://192.168.16.146:3002/api/evaporador/getEvidencias?job=${encodeURIComponent(job)}&carpeta=${encodeURIComponent(folderName)}`);
     if (!response.ok) {
       throw new Error('No se pudieron cargar las evidencias');
     }
@@ -240,7 +240,7 @@ const handleOpenFolder = (folderName: string) => {
         const imageName = `IMG_${Math.floor(Math.random() * 1000000)}`;
 
         try {
-          const result = await fetch('http://192.168.16.192:3002/api/evaporador/evidencias', {
+          const result = await fetch('http://192.168.16.146:3002/api/evaporador/evidencias', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -278,7 +278,7 @@ const handleDeleteImage = async () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            const url = `http://192.168.16.192:3002/api/evaporador/eliminarImagen?job=${encodeURIComponent(job)}&carpeta=${encodeURIComponent(selectedFolder)}&nombreImagen=${encodeURIComponent(selectedImage.nombreImagen)}`;
+            const url = `http://192.168.16.146:3002/api/evaporador/eliminarImagen?job=${encodeURIComponent(job)}&carpeta=${encodeURIComponent(selectedFolder)}&nombreImagen=${encodeURIComponent(selectedImage.nombreImagen)}`;
 
             const response = await fetch(url, {
               method: 'GET',

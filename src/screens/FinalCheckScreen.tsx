@@ -81,7 +81,7 @@ const FinalCheckScreen = () => {
                                 checkboxes: [...checkedItems, ...checkedCleaning, ...checkedBlower],
                                 comentarios
                               };
-                            try { const response = await fetch('http://192.168.16.192:3002/api/evaporador/incompleteFinal',{
+                            try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteFinal',{
                               method: 'POST',
                               headers: {
                                 'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ const FinalCheckScreen = () => {
                   comentarios
                 });
                 
-                        try { const response = await fetch ('http://192.168.16.192:3002/api/evaporador/completeFinal', {
+                        try { const response = await fetch ('http://192.168.16.146:3002/api/evaporador/completeFinal', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
