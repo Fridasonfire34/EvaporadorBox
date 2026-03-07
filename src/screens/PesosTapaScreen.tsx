@@ -45,6 +45,7 @@ const PesosTapaScreen = () => {
         maquinado: '',
         termometroId: '',
         comentarios: '',
+        tiempoChecked: '',
     });
 
      useEffect(() => {
@@ -71,8 +72,26 @@ const PesosTapaScreen = () => {
     };
 
     const onSave = async () => {
-    try {
-        const payload = {
+        if (!data.tiempoChecked) {
+          Alert.alert(
+            "Confirmación requerida",
+            "Favor de confirmar el tiempo de disparo",
+            [
+              { text: "Cancelar", style: "cancel" },
+              { 
+                text: "Confirmar", 
+                onPress: () => saveData(true)  // si confirma, guarda
+              }
+            ]
+          );
+        } else {
+          saveData(false); // si ya está marcado, guarda directo
+        }
+      };
+      
+      const saveData = async (fromConfirm: boolean) => {
+        try {
+          const payload = {
             job,
             fecha: fechaISO,
             nomina: user.Nomina,
@@ -82,43 +101,26 @@ const PesosTapaScreen = () => {
             maquinado: data.maquinado,
             termometroId: data.termometroId,
             comentarios: data.comentarios,
-            aprobado: approvalStatus === 'approved' ? 'SI' : 'NO'
-        };
-
-        const response = await fetch('http://192.168.16.146:3002/api/evaporador/pesosTapa', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            Alert.alert('Registro guardado con éxito.');
-            navigation.navigate('Pesos', { job });
-            setData({
-                    item: '',
-                    ensamble: '',
-                    temperatura: '',
-                    pesoAntes: '',
-                    pesoDespues: '',
-                    maquinado: '',
-                    termometroId: '',
-                    comentarios: '',
-                    });
-                    setApprovalStatus(null);
-
-        } else {
-            console.error('Error del servidor:', result.message);
-            Alert.alert('Error al guardar. Revisa los datos.');
+            // 👇 si está marcado o confirmó el modal, guarda 7.60
+            tiempodisparo: (data.tiempoChecked || fromConfirm) ? "7.60" : null,
+            aprobado: approvalStatus === "approved" ? "SI" : "NO",
+          };
+      
+          const response = await fetch(
+            "http://192.168.16.146:3002/api/evaporador/pesosTapa",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            }
+          );
+      
+          const result = await response.json();
+          console.log("Guardado:", result);
+        } catch (error) {
+          console.error("Error al guardar:", error);
         }
-    } catch (error) {
-        console.error('Error al guardar:', error);
-        Alert.alert('Error de conexión o del servidor.');
-    }
-};
+      };
 
     return (
         <ImageBackground source={require('../assets/bg1-eb.jpg')} style={{ flex: 1 }}>
@@ -212,6 +214,29 @@ const PesosTapaScreen = () => {
   </View>
 </View>
 
+<View style={styles.view}>
+  <Text style={styles.label}>Tiempo de Disparo</Text>
+
+  {/* Contenedor horizontal para el input y checkbox */}
+  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
+    <TextInput
+      style={[styles.inputDisp, { width: 300, marginRight: 10 }]}
+      value={"7.60"}
+      editable={false}
+    />
+
+    <TouchableOpacity
+      style={[
+        styles.checkboxDisp,
+        data.tiempoChecked && { backgroundColor: 'green' }
+      ]}
+      onPress={() => handleChange('tiempoChecked', !data.tiempoChecked)}
+    >
+      {data.tiempoChecked && <Text style={{ color: 'white' }}>✔</Text>}
+    </TouchableOpacity>
+  </View>
+  </View>
+
 <View style={styles.tableContainer}>
     <View style={styles.tableRow2}>
         <View style={[styles.tableCellBase, { flex: 1 }]}>
@@ -277,6 +302,27 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'center',
         marginTop: 80,
+    },
+    checkboxDisp: {
+        width: 24,
+        height: 24,
+        borderWidth: 2,
+        borderColor: '#333',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 15,
+        borderRadius: 4, // cuadrado con esquinas redondeadas
+      },
+      inputDisp: {
+        borderWidth: 1,
+        borderColor: '#999',
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        fontSize: 14,
+        backgroundColor: '#9E9B9B',
+        color: 'black',
+        height: 45,
     },
     welcomeText: {
         position: 'absolute',

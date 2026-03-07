@@ -41,7 +41,6 @@ const PesosBaseScreen = () => {
 
     const [data, setData] = useState({
         item: '',
-        operador: '',
         ensamble: '',
         temperatura: '',
         pesoAntes: '',
@@ -49,6 +48,7 @@ const PesosBaseScreen = () => {
         maquinado: '',
         termometroId: '',
         comentarios: '',
+        tiempoChecked: '',
     });
 
      useEffect(() => {
@@ -75,43 +75,56 @@ const PesosBaseScreen = () => {
     };
 
     const onSave = async () => {
-            try {
-                const payload = {
-                    job,
-                    fecha: fechaISO,
-                    nomina: user.Nomina,
-                    temperatura: data.temperatura,
-                    pesoAntes: data.pesoAntes,
-                    pesoDespues: data.pesoDespues,
-                    maquinado: data.maquinado,
-                    termometroId: data.termometroId,
-                    comentarios: data.comentarios,
-                    aprobado: approvalStatus === 'approved' ? 'SI' : 'NO'
-                };
-        
-                const response = await fetch('http://192.168.16.146:3002/api/evaporador/pesosBase', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                });
-        
-                const result = await response.json();
-        
-                if (response.ok) {
-                    Alert.alert('Registro guardado con éxito.');
-                    navigation.navigate('Pesos', { job });
-
-                } else {
-                    console.error('Error del servidor:', result.message);
-                    Alert.alert('Error al guardar. Revisa los datos.');
-                }
-            } catch (error) {
-                console.error('Error al guardar:', error);
-                Alert.alert('Error de conexión o del servidor.');
+        if (!data.tiempoChecked) {
+          Alert.alert(
+            "Confirmación requerida",
+            "Favor de confirmar el tiempo de disparo",
+            [
+              { text: "Cancelar", style: "cancel" },
+              { 
+                text: "Confirmar", 
+                onPress: () => saveData(true)  // si confirma, guarda
+              }
+            ]
+          );
+        } else {
+          saveData(false); // si ya está marcado, guarda directo
+        }
+      };
+      
+      const saveData = async (fromConfirm: boolean) => {
+        try {
+          const payload = {
+            job,
+            fecha: fechaISO,
+            nomina: user.Nomina,
+            temperatura: data.temperatura,
+            pesoAntes: data.pesoAntes,
+            pesoDespues: data.pesoDespues,
+            maquinado: data.maquinado,
+            termometroId: data.termometroId,
+            comentarios: data.comentarios,
+            // 👇 si está marcado o confirmó el modal, guarda 7.60
+            tiempodisparo: (data.tiempoChecked || fromConfirm) ? "7.60" : null,
+            aprobado: approvalStatus === "approved" ? "SI" : "NO",
+          };
+      
+          const response = await fetch(
+            "http://192.168.16.146:3002/api/evaporador/pesosBase",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
             }
-        };
+          );
+      
+          const result = await response.json();
+          console.log("Guardado:", result);
+        } catch (error) {
+          console.error("Error al guardar:", error);
+        }
+      };
+
 
     return (
                <ImageBackground source={require('../assets/bg1-eb.jpg')} style={{ flex: 1 }}>
@@ -200,6 +213,29 @@ const PesosBaseScreen = () => {
     />
   </View>
 </View>
+
+<View style={styles.view}>
+  <Text style={styles.label}>Tiempo de Disparo</Text>
+
+  {/* Contenedor horizontal para el input y checkbox */}
+  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
+    <TextInput
+      style={[styles.inputDisp, { width: 300, marginRight: 10 }]}
+      value={"6.00"}
+      editable={false}
+    />
+
+    <TouchableOpacity
+      style={[
+        styles.checkboxDisp,
+        data.tiempoChecked && { backgroundColor: 'green' }
+      ]}
+      onPress={() => handleChange('tiempoChecked', !data.tiempoChecked)}
+    >
+      {data.tiempoChecked && <Text style={{ color: 'white' }}>✔</Text>}
+    </TouchableOpacity>
+  </View>
+  </View>
        
        <View style={styles.tableContainer}>
            <View style={styles.tableRow2}>
@@ -351,6 +387,27 @@ const styles = StyleSheet.create({
            fontSize: 14,
            color: 'white',
        },
+       checkboxDisp: {
+        width: 24,
+        height: 24,
+        borderWidth: 2,
+        borderColor: '#333',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 15,
+        borderRadius: 4, // cuadrado con esquinas redondeadas
+      },
+      inputDisp: {
+        borderWidth: 1,
+        borderColor: '#999',
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        fontSize: 14,
+        backgroundColor: '#9E9B9B',
+        color: 'black',
+        height: 45,
+    },
        picker: {
         height: 50,
         borderWidth: 2,
