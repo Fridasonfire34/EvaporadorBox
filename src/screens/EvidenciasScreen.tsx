@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { launchCamera } from 'react-native-image-picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
 const EvidenciasScreen = () => {
   const route = useRoute();
@@ -253,6 +253,66 @@ const handleOpenFolder = (folderName: string) => {
   });
 };
 
+const handleSelectPhotos = () => {
+  const options = {
+    mediaType: 'photo',
+    includeBase64: true,
+    selectionLimit: 0, // 0 permite seleccionar múltiples
+  };
+
+  console.log("🖼️ Abriendo galería con options:", options);
+
+  launchImageLibrary(options, async (response) => {
+    console.log("🖼️ Respuesta de la galería:", response);
+
+    if (response.didCancel) {
+      console.log('Usuario canceló la selección');
+    } else if (response.errorCode) {
+      console.error('Error al acceder a la galería:', response.errorCode);
+    } else {
+      const assets = response.assets || [];
+      
+      if (assets.length === 0) return;
+
+      if (selectedFolder && job) {
+        let uploadedCount = 0;
+        
+        for (const asset of assets) {
+          if (!asset.base64) continue;
+
+          const imageName = `IMG_${Math.floor(Math.random() * 1000000)}`;
+
+          try {
+            const result = await fetch('http://192.168.16.146:3002/api/evaporador/evidencias', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                job,
+                carpeta: selectedFolder,
+                nombreImagen: imageName,
+                imagenBase64: asset.base64,
+              }),
+            });
+            
+            if (result.ok) {
+              uploadedCount++;
+            }
+          } catch (error) {
+            console.error('Error al subir imagen:', error);
+          }
+        }
+        
+        if (uploadedCount > 0) {
+          Alert.alert('✅ Imágenes cargadas', `Se cargaron ${uploadedCount} imagen(es) correctamente`);
+          await fetchEvidencias(job, selectedFolder);
+        } else {
+          Alert.alert('❌ Error', 'No se pudieron cargar las imágenes');
+        }
+      }
+    }
+  });
+};
+
 const handleDeleteImage = async () => {
   if (!selectedImage || !selectedFolder || !job) return;
 
@@ -334,9 +394,14 @@ const handleDeleteImage = async () => {
   </ScrollView>
 ) : (
   <>
-    <TouchableOpacity onPress={handleGoBack}>
-      <Text style={styles.back}>⬅ Volver</Text>
-    </TouchableOpacity>
+    <View style={styles.topRow}>
+      <TouchableOpacity onPress={handleGoBack}>
+        <Text style={styles.back}>⬅ Volver</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleSelectPhotos}>
+        <Text style={styles.loadLabel}>+ Cargar</Text>
+      </TouchableOpacity>
+    </View>
     <Text style={styles.title}>📂 {selectedFolder}</Text>
 
     <ScrollView contentContainerStyle={styles.imageContainer}>
@@ -640,11 +705,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     marginBottom: 15 
   },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
    back:{ 
     fontSize: 16,
-    marginBottom: 10,
     color: '#0011ff'
     },
+  loadLabel: {
+    fontSize: 20,
+    color: '#0011ff',
+    fontWeight: 'bold',
+  },
    fotoButtonContainer: {
     position: 'absolute',
     bottom: 60,
