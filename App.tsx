@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native'
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { PermissionsAndroid, Platform, Alert, Linking } from 'react-native';
-import axios from 'axios';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { PermissionsAndroid, Platform, Alert } from 'react-native';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 import LoginScreen from './src/screens/LoginScreen';
 import InicioScreen from './src/screens/InicioScreen';

@@ -5,14 +5,11 @@ import {
     StyleSheet,
     TouchableOpacity,
     Image,
-    Dimensions,
     Alert,
     BackHandler,
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const { width } = Dimensions.get('window');
 
 const PesosScreen = () => {
     const route = useRoute();
@@ -28,7 +25,7 @@ const PesosScreen = () => {
   useCallback(() => {
     const onBackPress = async () => {
       try {
-        await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+        await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
           method: 'POST',
         });
       } catch (error) {
@@ -54,9 +51,15 @@ const PesosScreen = () => {
             }
         };
 
+        loadUserData();
+    }, []);
+
+    useFocusEffect(
+      useCallback(() => {
+        let active = true;
         const fetchPesosStatus = async () => {
             try {
-                const response = await fetch('http://192.168.16.146:3002/api/evaporador/getPesos', {
+                const response = await fetch('http://192.168.15.155:3002/api/evaporador/getPesos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ job }),
@@ -66,18 +69,23 @@ const PesosScreen = () => {
 
                 const data = await response.json();
 
-                if (data.statusTapas === 'OK') setStatusTapaOK(true);
-                if (data.statusCuerpo === 'OK') setStatusCuerpoOK(true);
-                if (data.statusBase === 'OK') setStatusBaseOK(true);
+                if (active) {
+                    setStatusTapaOK(data.statusTapas === 'OK');
+                    setStatusCuerpoOK(data.statusCuerpo === 'OK');
+                    setStatusBaseOK(data.statusBase === 'OK');
+                }
             } catch (error) {
                 console.error('Error al consultar getPesos:', error);
-                Alert.alert('Error', 'No se pudo obtener el estado de pesos. Intenta más tarde.');
+                if (active) {
+                    Alert.alert('Error', 'No se pudo obtener el estado de pesos. Intenta más tarde.');
+                }
             }
         };
 
-        loadUserData();
         fetchPesosStatus();
-    }, []);
+        return () => { active = false; };
+      }, [job])
+    );
 
     const buttons = [
         { id: 0, label: 'Registro de Pesos y Espumado: TAPA', screen: 'PesosTapaScreen' },

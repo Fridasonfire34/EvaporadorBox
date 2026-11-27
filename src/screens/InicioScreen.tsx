@@ -7,15 +7,34 @@ import {
     ActivityIndicator,
     TouchableOpacity,
     Alert,
+    TextInput,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+type Job = {
+    'Job Number': string | number;
+};
+
+type InicioNavigation = NavigationProp<{
+    Menu: {
+        job: string | number;
+        nomina: string;
+    };
+}>;
 
 const InicioScreen = () => {
-    const [user, setUser] = useState<any>(null);
-    const navigation = useNavigation();
+    const [user, setUser] = useState<{ Nomina: string } | null>(null);
+    const navigation = useNavigation<InicioNavigation>();
     const [loading, setLoading] = useState(false);
-    const [jobsData, setJobsData] = useState([]);
+    const [jobsData, setJobsData] = useState<Job[]>([]);
+    const [searchText, setSearchText] = useState('');
+    const filteredJobs = jobsData.filter((item) =>
+        String(item['Job Number'])
+            .toLowerCase()
+            .includes(searchText.trim().toLowerCase()),
+    );
 
     useEffect(() => {
         const loadUserData = async () => {
@@ -32,7 +51,7 @@ const InicioScreen = () => {
     const fetchJobsFromAPI = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://192.168.16.146:3002/api/evaporador/job');
+            const response = await fetch('http://192.168.15.155:3002/api/evaporador/job');
             if (!response.ok) {
                 throw new Error('Error al obtener los jobs');
             }
@@ -59,37 +78,71 @@ const InicioScreen = () => {
         <View style={styles.container}>
             <View style={styles.headerBox}>
                 <Text style={styles.headerText}>Evaporador BOX</Text>
-                <Text style={styles.welcomeText}> {user.Nomina}</Text>
+                <Text style={styles.welcomeText}>Hola, {user.Nomina}</Text>
             </View>
-            <View style={styles.sectionBox}>
-                <Text style={styles.sectionTitle}>Elige un job:</Text>
-            </View>
-            {/* Tabla de Jobs */}
-            <View style={styles.tableWrapper}>
+            <View style={styles.content}>
+                <Text style={styles.sectionTitle}>Selecciona un job</Text>
+                <View style={styles.searchBox}>
+                    <Icon name="search" size={20} color="#64748B" />
+                    <TextInput
+                        style={styles.searchInput}
+                        value={searchText}
+                        onChangeText={setSearchText}
+                        placeholder="Buscar job..."
+                        placeholderTextColor="#64748B"
+                        returnKeyType="search"
+                        accessibilityLabel="Buscar job"
+                    />
+                    {searchText.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => setSearchText('')}
+                            accessibilityRole="button"
+                            accessibilityLabel="Limpiar búsqueda"
+                        >
+                            <Icon name="close-circle" size={20} color="#64748B" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+                <Text style={styles.jobsCount}>
+                    {filteredJobs.length} {filteredJobs.length === 1 ? 'job disponible' : 'jobs disponibles'}
+                </Text>
                 {loading ? (
-                    <ActivityIndicator size="large" color="#000000ff" />
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#0B4DBB" />
+                    </View>
                 ) : (
-                    <>
-
-                        {/* Filas */}
-                        <FlatList
-    data={jobsData}
-    keyExtractor={(item, index) => index.toString()}
-    renderItem={({ item }) => (
-        <TouchableOpacity
-            onPress={() => navigation.navigate('Menu', {
-                job: item["Job Number"],
-                nomina: user.Nomina,
-            })}
-        >
-            <View style={styles.card}>
-                <Text style={styles.cardText}>{item["Job Number"]}</Text>
-            </View>
-        </TouchableOpacity>
-    )}
-    contentContainerStyle={{ paddingBottom: 120, flexGrow: 1, }}
-/>
-                    </>
+                    <FlatList
+                        style={styles.jobsList}
+                        data={filteredJobs}
+                        keyExtractor={(item, index) =>
+                            String(item['Job Number'] ?? index)
+                        }
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.card}
+                                activeOpacity={0.75}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Abrir job ${item['Job Number']}`}
+                                onPress={() =>
+                                    navigation.navigate('Menu', {
+                                        job: item['Job Number'],
+                                        nomina: user.Nomina,
+                                    })
+                                }
+                            >
+                                <Text style={styles.cardText}>{item['Job Number']}</Text>
+                                <Icon name="chevron-forward" size={22} color="#0B4DBB" />
+                            </TouchableOpacity>
+                        )}
+                        contentContainerStyle={styles.listContent}
+                        ListEmptyComponent={
+                            <Text style={styles.emptyText}>
+                                {jobsData.length === 0
+                                    ? 'No hay jobs disponibles.'
+                                    : 'No se encontraron jobs con esa búsqueda.'}
+                            </Text>
+                        }
+                    />
                 )}
             </View>
         </View>
@@ -98,21 +151,22 @@ const InicioScreen = () => {
 
 
 const styles = StyleSheet.create({
-     loadingText: {
+    loadingText: {
         fontSize: 14,
         textAlign: 'center',
         marginTop: 80,
     },
     container: {
+        flex: 1,
         backgroundColor: '#fff',
     },
     headerBox: {
-        backgroundColor: '#0011ffff',
-        padding: 15,
-        marginBottom: 1,
+        backgroundColor: '#196cb5e4',
+        paddingHorizontal: 20,
+        paddingVertical: 18,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
+        justifyContent: 'space-between',
     },
     headerText: {
         color: '#fff',
@@ -120,86 +174,85 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     welcomeText: {
-        position: 'absolute',
-        right: 15,
-        top: 15,
         color: '#fff',
         fontSize: 14,
         fontWeight: 'bold',
     },
-    sectionBox: {
-        marginBottom: 10,
-        alignItems: 'center',
-        marginLeft: 1
+    content: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 24,
     },
     sectionTitle: {
-        fontSize: 22,
-        fontWeight: '600',
-        marginLeft: 1
-    },
-    instructionText: {
-        fontSize: 12,
-        lineHeight: 18,
-        textAlign: 'justify'
-    },
-    bold: {
+        fontSize: 25,
         fontWeight: 'bold',
+        color: '#000000',
+        marginBottom: 18,
     },
-    instructionsWrapper: {
-        marginLeft: 5,
-        marginRight: 5,
-    },
-    tableWrapper: {
-        marginHorizontal: 10,
-        marginTop: 5,
-        paddingBottom: 10,
-        marginBottom: 120,
-    },
-    tableHeader: {
+    searchBox: {
         flexDirection: 'row',
-        paddingVertical: 10,
-        paddingHorizontal: 5,
-        color: 'black'
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderColor: '#D5DFEC',
+        borderWidth: 1,
+        borderRadius: 10,
+        minHeight: 52,
+        paddingHorizontal: 14,
     },
-
-    tableHeaderText: {
-        color: '#black',
-        fontWeight: 'bold',
-    },
-
-    tableRow: {
-        flexDirection: 'row',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderColor: '#ccc',
-    },
-
-    tableCell: {
+    searchInput: {
         flex: 1,
         fontSize: 16,
-        paddingHorizontal: 5,
+        color: '#000000e4',
+        paddingVertical: 10,
+        paddingLeft: 10,
+    },
+    jobsCount: {
+        color: '#000000',
+        fontSize: 14,
+        marginTop: 18,
+        marginBottom: 10,
+    },
+    jobsList: {
+        flex: 1,
+    },
+    listContent: {
+        paddingBottom: 96,
+        flexGrow: 1,
     },
     card: {
-        backgroundColor: '#f5f5f5', // Color de fondo del recuadro
-        padding: 15,
-        marginBottom: 10, // separación entre cada recuadro
-        borderRadius: 8, // bordes redondeados
+        minHeight: 76,
+        backgroundColor: '#196cb5',
+        paddingHorizontal: 18,
+        paddingVertical: 16,
+        marginBottom: 10,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#ddd',
-        elevation: 2, // sombra en Android
-        shadowColor: '#000', // sombra en iOS
+        borderColor: '#636363',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        elevation: 2,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
     },
     cardText: {
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center'
+        color: '#ffffff',
     },
-    
-
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        color: '#196cb5e4',
+        fontSize: 15,
+        textAlign: 'center',
+        marginTop: 32,
+    },
 });
 
 

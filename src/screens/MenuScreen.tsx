@@ -45,7 +45,7 @@ const MenuScreen = () => {
       useCallback(() => {
         const fetchLecturasYChecklist = async () => {
           try {
-            const response = await fetch('http://192.168.16.146:3002/api/evaporador/getLecturasyCFinal', {
+            const response = await fetch('http://192.168.15.155:3002/api/evaporador/getLecturasyCFinal', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ job }),

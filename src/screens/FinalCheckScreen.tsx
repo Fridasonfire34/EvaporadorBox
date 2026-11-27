@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ImageBackground, Alert, KeyboardAvoidingView, Platform} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import CheckBox from '@react-native-community/checkbox';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ChecklistComments, ChecklistHeader, ChecklistItem, checklistStyles } from '../components/ChecklistUI';
 
 
 const FinalCheckScreen = () => {
@@ -62,6 +61,15 @@ const FinalCheckScreen = () => {
         );
     }
 
+    // Orden esperado por el backend (13 valores, mismo orden que la pantalla):
+    // puntos 1-4, limpieza A-D, blower A-B, puntos 7-9
+    const buildCheckboxes = () => [
+      ...checkedItems.slice(0, 4),
+      ...checkedCleaning,
+      ...checkedBlower,
+      ...checkedItems.slice(4, 7),
+    ];
+
      const handleIncomplete = () => {
   Alert.alert(
     'Verificación Incompleta',
@@ -78,12 +86,12 @@ const FinalCheckScreen = () => {
             job,
             fecha: fechaISO,
             nomina: user?.Nomina,
-            checkboxes: [...checkedItems, ...checkedCleaning, ...checkedBlower],
+            checkboxes: buildCheckboxes(),
             comentarios
           };
 
           try {
-            const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteFinal', {
+            const response = await fetch('http://192.168.15.155:3002/api/evaporador/incompleteFinal', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -91,14 +99,14 @@ const FinalCheckScreen = () => {
               body: JSON.stringify(payload),
             });
 
-            console.log('Total checkboxes:', [...checkedItems, ...checkedCleaning, ...checkedBlower].length);
+            console.log('Total checkboxes:', buildCheckboxes().length);
             const result = await response.json();
 
             if (result.success) {
               Alert.alert('Enviado', 'Checklist enviado como INCOMPLETO.');
 
               try {
-                await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+                await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
                   method: 'POST',
                 });
               } catch (error) {
@@ -126,12 +134,12 @@ const FinalCheckScreen = () => {
     job,
     fecha: fechaISO,
     nomina: user?.Nomina,
-    checkboxes: [...checkedItems, ...checkedCleaning, ...checkedBlower],
+    checkboxes: buildCheckboxes(),
     comentarios
   });
 
   try {
-    const response = await fetch('http://192.168.16.146:3002/api/evaporador/completeFinal', {
+    const response = await fetch('http://192.168.15.155:3002/api/evaporador/completeFinal', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -140,19 +148,19 @@ const FinalCheckScreen = () => {
         job,
         fecha: fechaISO,
         nomina: user?.Nomina,
-        checkboxes: [...checkedItems, ...checkedCleaning, ...checkedBlower],
+        checkboxes: buildCheckboxes(),
         comentarios
       }),
     });
 
-    console.log('Total checkboxes:', [...checkedItems, ...checkedCleaning, ...checkedBlower].length);
+    console.log('Total checkboxes:', buildCheckboxes().length);
     const result = await response.json();
 
     if (result.success) {
       Alert.alert('Enviado', 'Checklist enviado como COMPLETO.');
 
       try {
-        await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+        await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
           method: 'POST',
         });
       } catch (error) {
@@ -174,59 +182,21 @@ const FinalCheckScreen = () => {
     
 
     return (
-    <ImageBackground source={require('../assets/bg1-eb.jpg')} style={{ flex: 1 }}>
+    <View style={checklistStyles.background}>
   <KeyboardAvoidingView
   behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // o 'position' si no funciona bien
       style={{ flex: 1 }}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20} // Ajusta según tu header si tienes
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Tu contenido aquí */}
-        {/* Registro de Lecturas */}
-        <View style={styles.headerBox}>
-            <Text style={styles.headerText}>BOM CONFIRMACION:</Text>
-            <Text style={styles.headerText}>Checklist Final</Text>
-        </View>
-
-        {/* Instrucciones */}
-        <View style={styles.sectionBox}>
-            <View style={styles.instructionsWrapper}>
-                <Text style={styles.instructionText}>
-                    <Text style={styles.bold}>Instrucciones: </Text>
-                    Examine cada apartado del checklist, que incluye secciones especificas para verificar la ausencia de rayones, golpes y otros defectos críticos.
-                    Cada sección debe ser inspeccionada minuciosamente y compara con los estándares de calidad establecidos.
-                    Al completar la revisión de cada criterio, marque la casilla correspondiente, si el componente cumple con los requisitos o no la marque si presenta algún defecto.
-                    Registre cualquier incidencia en el espacio designado para comentarios y observaciones.
-                </Text>
-            </View>
-        </View>
-
-        {/* Job */}
-        <View style={styles.infoRow}>
-            <Text style={styles.bold2}>FECHA: </Text>
-            <Text style={styles.normal}>{formatFechaLocal(fechaISO)}</Text>
-            <Text style={styles.bold2}>JOB: </Text>
-            <Text style={styles.normal}>{job}</Text>                                               
-            <Text style={styles.bold2}>NOMINA: </Text>
-            <Text style={styles.normal}>{user.Nomina}</Text>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-
-  {/* Filas de datos */}
-  <View style={styles.tableContainer}>
-  {/* Encabezados */}
-  <View style={styles.tableRowHeader}>
-    <View style={styles.colItem}>
-      <Text style={styles.headerTABLE}>VERIFICACIÓN</Text>
-    </View>
-    <View style={styles.colDesc}>
-      <Text style={styles.headerTABLE}>DESCRIPCIÓN</Text>
-    </View>
-    <View style={styles.colStatus}>
-      <Text style={styles.headerTABLE}>STATUS</Text>
-    </View>
-  </View>
+      <ScrollView contentContainerStyle={checklistStyles.scrollContent} keyboardShouldPersistTaps="handled">
+        <ChecklistHeader
+          title="Checklist Final"
+          date={formatFechaLocal(fechaISO)}
+          job={job}
+          nomina={user.Nomina}
+          instructions="Examine cada apartado del checklist, que incluye secciones especificas para verificar la ausencia de rayones, golpes y otros defectos críticos. Cada sección debe ser inspeccionada minuciosamente y compara con los estándares de calidad establecidos. Al completar la revisión de cada criterio, marque la casilla correspondiente, si el componente cumple con los requisitos o no la marque si presenta algún defecto. Registre cualquier incidencia en el espacio designado para comentarios y observaciones."
+        />
+        <Text style={checklistStyles.sectionHeading}>Puntos de verificación</Text>
 
   {[
   ["1. Confirmación de subensamble", "El ensamblaje final debe contener todos los subensambles completos y correctamente instalados"],
@@ -234,210 +204,75 @@ const FinalCheckScreen = () => {
   ["3. Revisión de daños físicos", "El ensamblaje no debe presentar golpes, abolladuras ni deformaciones. Inspeccionar cuidadosamente todas las superficies visibles para detectar daños estructurales"],
   ["4. Revisión de rayaduras", "El ensamblaje de piezas de aluminio y Versitex debe estar libre de rayaduras, marcas o defectos en la superficie. Es necesario verificar todas las áreas expuestas para asegurar una presentación impecable y una funcionalidad óptima."]
 ].map(([item, desc], idx) => (
-  <TouchableOpacity
+  <ChecklistItem
     key={idx}
-    style={[
-      styles.tableRow,
-      { backgroundColor: checkedItems[idx] ? '#d0f0c0' : '#fff' }
-    ]}
-    onPress={() => {
+    title={item}
+    description={desc}
+    checked={checkedItems[idx]}
+    onChange={(value) => {
       const updated = [...checkedItems];
-      updated[idx] = !updated[idx];
+      updated[idx] = value;
       setCheckedItems(updated);
     }}
-  >
-    <View style={[styles.tableCellBase, styles.colItem]}>
-      <Text style={styles.tableText}>{item}</Text>
-    </View>
-    <View style={[styles.tableCellBase, styles.colDesc]}>
-      <Text style={styles.tableText}>{desc}</Text>
-    </View>
-    <View style={[styles.tableCellBase, styles.colStatus]}>
-      <CheckBox
-        value={checkedItems[idx]}
-        onValueChange={() => {
-          const updated = [...checkedItems];
-          updated[idx] = !updated[idx];
-          setCheckedItems(updated);
-        }}
-        tintColors={{ true: 'black', false: 'black' }}
-      />
-    </View>
-  </TouchableOpacity>
+  />
 ))}
 
-  {/* Sección 5: Limpieza general (Simula rowspan) */}
-<View style={styles.tableRow}>
-  <View style={[styles.tableCellBase, styles.colItemLimp]}>
-    <Text style={[styles.tableText]}>5. Limpieza General</Text>
-  </View>
-  <View style={[styles.tableCellBase, styles.colDesc]}>
-    <Text style={styles.tableText}>Realizar una limpieza completa del ensamblaje para eliminar cualquier residuo como:</Text>
-  </View>
-  <View style={[styles.tableCellBase, styles.colStatus]} />
-</View>
+<Text style={checklistStyles.sectionHeading}>5. Limpieza general</Text>
+<Text style={styles.checklistSectionDescription}>Realizar una limpieza completa del ensamblaje para eliminar cualquier residuo como:</Text>
 
 {["A) Espuma", "B) Silicón", "C) Soldadura o cualquier otro material", "Asegurarse que no queden restos de material que puedan afectar la funcionalidad o apariencia de marcas o trazos"].map((label, idx) => (
-  <TouchableOpacity
+  <ChecklistItem
     key={`clean-${idx}`}
-    style={[
-      styles.tableRow,
-      { backgroundColor: checkedCleaning[idx] ? '#d0f0c0' : '#fff' }
-    ]}
-    onPress={() => {
+    title={label}
+    checked={checkedCleaning[idx]}
+    onChange={(value) => {
       const updated = [...checkedCleaning];
-      updated[idx] = !updated[idx];
+      updated[idx] = value;
       setCheckedCleaning(updated);
     }}
-  >
-    <View style={styles.colItemLimp} />
-    <View style={[styles.tableCellBase, styles.colDesc5]}>
-      <Text style={styles.tableText}>{label}</Text>
-    </View>
-    <View style={[styles.tableCellBase, styles.colStatus]}>
-      <CheckBox
-        value={checkedCleaning[idx]}
-        onValueChange={() => {
-          const updated = [...checkedCleaning];
-          updated[idx] = !updated[idx];
-          setCheckedCleaning(updated);
-        }}
-        tintColors={{ true: 'black', false: 'black' }}
-      />
-    </View>
-  </TouchableOpacity>
+  />
 ))}
 
-{/* Sección 6: Verificación del Blower (Simula rowspan) */}
-<TouchableOpacity
-  style={[
-    styles.tableRow,
-    { backgroundColor: checkedBlower[0] ? '#d0f0c0' : '#fff' }
-  ]}
-  onPress={() => {
+<Text style={checklistStyles.sectionHeading}>6. Verificación del Blower</Text>
+<ChecklistItem
+  title="A) Torque 13 FT-LB"
+  checked={checkedBlower[0]}
+  onChange={(value) => {
     const updated = [...checkedBlower];
-    updated[0] = !updated[0];
+    updated[0] = value;
     setCheckedBlower(updated);
   }}
->
-  <View style={[styles.tableCellBase, styles.colItemBLOW]}>
-    <Text style={styles.tableText}>6. Verificación del Blower</Text>
-  </View>
-  <View style={[styles.tableCellBase, styles.colDesc7]}>
-    <Text style={styles.tableText}>A) Torque 13 FT-LB</Text>
-  </View>
-  <View style={[styles.tableCellBase, styles.colStatus]}>
-    <CheckBox
-      value={checkedBlower[0]}
-      onValueChange={() => {
-        const updated = [...checkedBlower];
-        updated[0] = !updated[0];
-        setCheckedBlower(updated);
-      }}
-      tintColors={{ true: 'black', false: 'black' }}
-    />
-  </View>
-</TouchableOpacity>
+/>
 
-<TouchableOpacity
-  style={[
-    styles.tableRow,
-    { backgroundColor: checkedBlower[1] ? '#d0f0c0' : '#fff' }
-  ]}
-  onPress={() => {
+<ChecklistItem
+  title={'B) Verificar que el blower se coloque a una distancia de 1/4"'}
+  checked={checkedBlower[1]}
+  onChange={(value) => {
     const updated = [...checkedBlower];
-    updated[1] = !updated[1];
+    updated[1] = value;
     setCheckedBlower(updated);
   }}
->
-  <View style={styles.colItemLimp2} />
-  <View style={[styles.tableCellBase, styles.colDesc6]}>
-    <Text style={styles.tableText}>B) Verificar que el blower se coloque a una distancia de 1/4"</Text>
-  </View>
-  <View style={[styles.tableCellBase, styles.colStatus]}>
-    <CheckBox
-      value={checkedBlower[1]}
-      onValueChange={() => {
-        const updated = [...checkedBlower];
-        updated[1] = !updated[1];
-        setCheckedBlower(updated);
-      }}
-      tintColors={{ true: 'black', false: 'black' }}
-    />
-  </View>
-</TouchableOpacity>
-
+/>
 
   {[
   ["7. Verificación de ajustes y alineación", "Comprobar que todos los componentes estén correctamente alineados y ajustados según las especificaciones del diseño."],
   ["8. Continuidad del circuito", "Verificación de la continuidad del circuito utilizando un multímetro, garantizando que la lectura de ohmios esté dentro de las especificaciones toleradas."],
   ["9. Documentación y etiquetado", "Asegurar que el ensamblaje esté debidamente documentado y etiquetado, conforme a los procedimientos de calidad."]
 ].map(([item, desc], idx) => (
-  <TouchableOpacity
+  <ChecklistItem
     key={idx + 6}
-    style={[
-      styles.tableRow,
-      { backgroundColor: checkedItems[idx + 4] ? '#d0f0c0' : '#fff' }
-    ]}
-    onPress={() => {
+    title={item}
+    description={desc}
+    checked={checkedItems[idx + 4]}
+    onChange={(value) => {
       const updated = [...checkedItems];
-      updated[idx + 4] = !updated[idx + 4];
+      updated[idx + 4] = value;
       setCheckedItems(updated);
     }}
-  >
-    <View style={[styles.tableCellBase, styles.colItem7]}>
-      <Text style={styles.tableText}>{item}</Text>
-    </View>
-    <View style={[styles.tableCellBase, styles.colDesc]}>
-      <Text style={styles.tableText}>{desc}</Text>
-    </View>
-    <View style={[styles.tableCellBase, styles.colStatus]}>
-      <CheckBox
-        value={checkedItems[idx + 4]}
-        onValueChange={() => {
-          const updated = [...checkedItems];
-          updated[idx + 4] = !updated[idx + 4];
-          setCheckedItems(updated);
-        }}
-        tintColors={{ true: 'black', false: 'black' }}
-      />
-    </View>
-  </TouchableOpacity>
+  />
 ))}
-</View>
 
-<View style={styles.tableContainer}>
-    <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase3, styles.colOBS]}>
-        <Text style={styles.tableText2}>OSERVACIONES Y COMENTARIOS</Text></View>
-    <View style={[styles.tableCellBase3, styles.colStat]}>
-        <Text style={styles.tableText2}>STATUS</Text></View>
-    </View>
-
-    <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase3, styles.colOBST]}>
-      <TextInput
-                                      style={styles.inputText}
-                                      multiline={true}
-                                      textAlignVertical="top"
-                                      placeholder="Escribe aquí..."
-                                      value={comentarios}
-                                      onChangeText={setComentarios}
-      />
-    </View>
-    <View style={[styles.tableCellBase3, styles.colStat]}>
-      <CheckBox
-    value={statusChecked}
-    disabled={!(
-  checkedItems.every(item => item) &&
-  checkedCleaning.every(item => item) &&
-  checkedBlower.every(item => item)
-)}
-    tintColors={{ true: 'black', false: 'gray' }}
-/>
-    </View>
-  </View>
-  </View>
+            <ChecklistComments value={comentarios} onChange={setComentarios} complete={statusChecked} />
             {/* Botón Guardar */}
             <TouchableOpacity
                                                     style={styles.saveButton}
@@ -451,15 +286,21 @@ const FinalCheckScreen = () => {
                                                 >
                                                     <Text style={styles.saveButtonText}>GUARDAR</Text>
             </TouchableOpacity>
-        </ScrollView>
           </ScrollView>
     </KeyboardAvoidingView>
-    </ImageBackground>
+    </View>
 );
 
 };
 
 const styles = StyleSheet.create({
+  checklistSectionDescription: {
+    color: '#475569',
+    fontSize: 14,
+    lineHeight: 20,
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
   loadingText: {
            fontSize: 14,
            textAlign: 'center',
@@ -526,7 +367,7 @@ const styles = StyleSheet.create({
         color: 'white'
     },
     saveButton: {
-        backgroundColor: '#0011ff',
+        backgroundColor: '#0b2d6b',
         padding: 15,
         borderRadius: 8,
         margin: 20,
