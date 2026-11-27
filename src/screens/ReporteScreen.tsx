@@ -50,7 +50,7 @@ const getFechaActual = () => {
 
    const guardarReporte = async () => {
   try {
-    const response = await fetch('http://192.168.16.146:3002/api/evaporador/saveReporte', {
+    const response = await fetch('http://192.168.15.155:3002/api/evaporador/saveReporte', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -94,7 +94,7 @@ const getFechaActual = () => {
     };
 
     const response = await axios.post(
-      'http://192.168.16.146:3002/api/evaporador/Reporte',
+      'http://192.168.15.155:3002/api/evaporador/Reporte',
       payload,
       { responseType: 'arraybuffer' }
     );
@@ -198,7 +198,4 @@ buttonImprimir: {
 });
 
 export default ReporteScreen;
-function arrayBufferToBase64(data: any) {
-  throw new Error('Function not implemented.');
-}
 

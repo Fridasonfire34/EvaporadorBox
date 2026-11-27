@@ -9,7 +9,6 @@ import {
     Alert,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const OpcionesProcesoScreen = () => {
     const route = useRoute();
@@ -20,19 +19,11 @@ const OpcionesProcesoScreen = () => {
     const [statusMASTEROK, setStatusMASTEROK] = useState(false);
     const [activeButton, setActiveButton] = useState<number | null>(null);
     const navigation = useNavigation();
-    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        const loadUserData = async () => {
-            const userData = await AsyncStorage.getItem('user');
-            if (userData) {
-                setUser(JSON.parse(userData));
-            }
-        };
-
         const fetchPesosStatus = async () => {
             try {
-                const response = await fetch('http://192.168.16.146:3002/api/evaporador/getProcesos', {
+                const response = await fetch('http://192.168.15.155:3002/api/evaporador/getProcesos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ job }),
@@ -52,9 +43,8 @@ const OpcionesProcesoScreen = () => {
             }
         };
 
-        loadUserData();
         fetchPesosStatus();
-    }, []);
+    }, [job]);
 
     const buttons = [
         { id: 0, label: 'Assembly Box, LID', screen: 'LIDScreen' },
@@ -100,7 +90,7 @@ const OpcionesProcesoScreen = () => {
       useCallback(() => {
         const onBackPress = async () => {
           try {
-            await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+            await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
               method: 'POST',
             });
           } catch (error) {

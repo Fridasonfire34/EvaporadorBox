@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ImageBackground, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Modal, Pressable } from 'react-native';
-import CheckBox from '@react-native-community/checkbox';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ChecklistComments, ChecklistHeader, ChecklistItem, checklistStyles } from '../components/ChecklistUI';
 
 
 const LIDScreen = () => {
@@ -95,7 +95,7 @@ const LIDScreen = () => {
                 modelo: modeloValue,
                 comentarios
               };
-            try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteLid',{
+            try { const response = await fetch('http://192.168.15.155:3002/api/evaporador/incompleteLid',{
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ const LIDScreen = () => {
                           Alert.alert('Enviado', 'Checklist enviado como INCOMPLETO.');
             
                           try {
-                            await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+                            await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
                               method: 'POST',
                             });
                           } catch (error) {
@@ -134,7 +134,7 @@ const LIDScreen = () => {
 
 const handleComplete = async () => {
   try {
-    const response = await fetch('http://192.168.16.146:3002/api/evaporador/completeLid', {
+    const response = await fetch('http://192.168.15.155:3002/api/evaporador/completeLid', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ const handleComplete = async () => {
       Alert.alert('Enviado', 'Checklist enviado como COMPLETO.');
 
       try {
-        await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+        await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
           method: 'POST',
         });
       } catch (error) {
@@ -182,51 +182,21 @@ const handleComplete = async () => {
 
 
     return (
-    <ImageBackground source={require('../assets/bg1-eb.jpg')} style={{ flex: 1 }}>
+    <View style={checklistStyles.background}>
  <KeyboardAvoidingView
   behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // o 'position' si no funciona bien
       style={{ flex: 1 }}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20} // Ajusta según tu header si tienes
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Registro de Lecturas */}
-        <View style={styles.headerBox}>
-            <Text style={styles.headerText}>BOM CONFIRMACION:</Text>
-            <Text style={styles.headerText}>ASSEMBLY BOX, LID</Text>
-        </View>
-
-        {/* Instrucciones */}
-        <View style={styles.sectionBox}>
-            <View style={styles.instructionsWrapper}>
-                <Text style={styles.instructionText}>
-                    <Text style={styles.bold}>Instrucciones: </Text>
-                    Garantizar que todos los componentes necesarios se encuentren disponibles antes de iniciar el proceso de ensamble. Primero, identifique el componente en cuestión y compare la cantidad especificada en el check list de referencia con la cantidad disponible. Marque el recuadro correspondiente. En caso de que no se cuente con la cantidad adecuada, registre la discrepancia en el campo de observaciones.
-                </Text>
-            </View>
-        </View>
-
-        {/* Job */}
-        <View style={styles.infoRow}>
-            <Text style={styles.bold2}>FECHA: </Text>
-                           <Text style={styles.normal}>{formatFechaLocal(fechaISO)}</Text>
-                           <Text style={styles.bold2}>JOB: </Text>
-                           <Text style={styles.normal}>{job}</Text>                                               
-                           <Text style={styles.bold2}>NOMINA: </Text>
-                           <Text style={styles.normal}>{user.Nomina}</Text>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-
-            {/* Tabla insertada aquí */}
-            <View style={styles.tableContainer}>
-    {/* Encabezados */}
-    <View style={styles.tableRowHeader}>
-    <View style={styles.colItem}><Text style={styles.headerTABLE}>ITEM</Text></View>
-    <View style={styles.colDesc}><Text style={styles.headerTABLE}>DESCRIPCIÓN</Text></View>
-    <View style={styles.colPart}><Text style={styles.headerTABLE}>NUM. DE PARTE</Text></View>
-    <View style={styles.colQty}><Text style={styles.headerTABLE}>QTY</Text></View>
-    <View style={styles.colStatus}><Text style={styles.headerTABLE}>STATUS</Text></View>
-</View>
+      <ScrollView contentContainerStyle={checklistStyles.scrollContent} keyboardShouldPersistTaps="handled">
+        <ChecklistHeader
+            title="ASSEMBLY BOX, LID"
+            date={formatFechaLocal(fechaISO)}
+            job={job}
+            nomina={user.Nomina}
+            instructions="Garantizar que todos los componentes necesarios se encuentren disponibles antes de iniciar el proceso de ensamble. Primero, identifique el componente en cuestión y compare la cantidad especificada en el check list de referencia con la cantidad disponible. Marque el recuadro correspondiente. En caso de que no se cuente con la cantidad adecuada, registre la discrepancia en el campo de observaciones."
+        />
+        <Text style={checklistStyles.sectionHeading}>Componentes a verificar</Text>
 
     {/* Filas de datos */}
     {[
@@ -240,162 +210,53 @@ const handleComplete = async () => {
     [8, 'SCREW, FPH, #10-32 X 3/4", 18-8 SS', "7410231", "8"],
     [9, 'SCREW, PHP, #10-32 X 1", 18-8 SS', "2000013", "8"]
 ].map(([item, desc, part, qty], idx) => (
-    <TouchableOpacity
+    <ChecklistItem
         key={idx}
-        style={[
-            styles.tableRow,
-            { backgroundColor: checkedItems[idx] ? '#d0f0c0' : '#fff' }
-        ]}
-        onPress={() => {
+        title={`${item}. ${desc}`}
+        detail={`Núm. de parte: ${part}   ·   Cantidad: ${qty}`}
+        checked={!!checkedItems[idx]}
+        onChange={(value) => {
             const updated = [...checkedItems];
-            updated[idx] = !updated[idx];
+            updated[idx] = value;
             setCheckedItems(updated);
         }}
-    >
-        <View style={[styles.tableCellBase, styles.colItem]}>
-            <Text style={styles.tableText}>{item}</Text>
-        </View>
-        <View style={[styles.tableCellBase, styles.colDesc]}>
-            <Text style={styles.tableText}>{desc}</Text>
-        </View>
-        <View style={[styles.tableCellBase, styles.colPart]}>
-            <Text style={styles.tableText}>{part}</Text>
-        </View>
-        <View style={[styles.tableCellBase,styles.colQty]}>
-            <Text style={styles.tableText}>{qty}</Text>
-        </View>
-        <View style={[styles.tableCellBase, styles.colStatus]}>
-            <CheckBox
-                value={checkedItems[idx]}
-                onValueChange={() => {
-                    const updated = [...checkedItems];
-                    updated[idx] = !updated[idx];
-                    setCheckedItems(updated);
-                }}
-                tintColors={{ true: 'black', false: 'black' }}
+    />
+))}
+        <Text style={checklistStyles.sectionHeading}>Mediciones y motor</Text>
+        <View style={styles.measurementsCard}>
+            <Text style={styles.measurementLabel}>Distancia de blower (requerida: 0.25 in)</Text>
+            <TextInput
+                keyboardType="numeric"
+                style={styles.measurementInput}
+                value={blowerDistance}
+                onChangeText={setBlowerDistance}
+                accessibilityLabel="Distancia actual de blower"
+            />
+            <Text style={styles.measurementLabel}>Torque (requerido: 13 FT-LB)</Text>
+            <TextInput
+                keyboardType="numeric"
+                style={styles.measurementInput}
+                value={torqueValue}
+                onChangeText={setTorqueValue}
+                accessibilityLabel="Torque actual"
+            />
+            <Text style={styles.measurementLabel}>Motor 1: número de serie/lote</Text>
+            <TextInput
+                style={styles.measurementInput}
+                value={serieValue}
+                onChangeText={setSerieValue}
+                accessibilityLabel="Número de serie o lote del motor"
+            />
+            <Text style={styles.measurementLabel}>Modelo del motor</Text>
+            <TextInput
+                style={styles.measurementInput}
+                value={modeloValue}
+                onChangeText={setModeloValue}
+                accessibilityLabel="Modelo del motor"
             />
         </View>
-    </TouchableOpacity>
-))}
-</View>
-{/* Separador visual antes de BLOWER */}
 
-{/* BLOWER y TORQUE */}
-<View style={styles.tableContainer}>
-  {/* BLOWER */}
-  <View style={styles.tableRow}>
-    <View style={[styles.tableCellBase3, styles.colBlow]}>
-        <Text style={styles.tableText2}>BLOWER</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colVer]}>
-        <Text style={styles.tableText2}>Verificación de distancia de blower</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colDist]}>
-        <Text style={styles.tableText2}>Distancia requerida:{"\n"}0.25 in</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colMed]}>
-        <Text style={styles.tableText2}>Medida actual</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colInput]}>
-       <TextInput
-        keyboardType='numeric'
-  style={styles.inputText}
-  value={blowerDistance}
-  onChangeText={setBlowerDistance}
-/>
-    </View>
-  </View>
-
-  {/* TORQUE */}
-  <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase3, styles.colBlow]}>
-        <Text style={styles.tableText2}>TORQUE</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colVer]}>
-        <Text style={styles.tableText2}>Verificación de torque</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colDist]}>
-        <Text style={styles.tableText2}>Torque requerido:{"\n"}13 FT-LB</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colMed]}>
-        <Text style={styles.tableText2}>Medida actual</Text>
-        </View>
-    <View style={[styles.tableCellBase3, styles.colInput]}>
-      <TextInput
-      keyboardType='numeric'
-  style={styles.inputText}
-  value={torqueValue}
-  onChangeText={setTorqueValue}
-/>
-    </View>
-  </View>
-</View>
-
-{/* MOTOR */}
-  {/* Encabezado */}
-  <View style={styles.tableContainer}>
-    <View style={styles.tableRow}>
-        <View style={styles.tableCellBase3}>
-            <Text style={styles.tableText2}>MOTOR</Text>
-        </View>
-        <View style={styles.tableCellBase3}>
-            <Text style={styles.tableText2}>NUMERO DE SERIE/LOTE</Text>
-        </View>
-        <View style={styles.tableCellBase3}>
-            <Text style={styles.tableText2}>MODELO</Text>
-        </View>
-    </View>
-
-  {/* Fila con Inputs */}
-    <View style={styles.tableRow2}>
-        <View style={styles.tableCellBase3}>
-            <Text style={styles.tableText}>MOTOR1</Text>
-        </View>
-        <View style={styles.tableCellBase3}>
-           <TextInput
-  style={styles.inputText}
-  value={serieValue}
-  onChangeText={setSerieValue}
-/>
-        </View>
-        <View style={styles.tableCellBase3}>
-            <TextInput
-  style={styles.inputText}
-  value={modeloValue}
-  onChangeText={setModeloValue}
-/>
-        </View>
-    </View>
-  </View>
-
- <View style={styles.tableContainer}>
-    <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase4, styles.colOBS]}>
-        <Text style={styles.tableText2}>OSERVACIONES Y COMENTARIOS</Text></View>
-    <View style={[styles.tableCellBase4, styles.colStat]}>
-        <Text style={styles.tableText2}>STATUS</Text></View>
-    </View>
-
-    <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase4, styles.colOBST]}>
-      <TextInput
-          style={styles.inputText}
-          multiline={true}
-          textAlignVertical="top"
-          placeholder="Escribe aquí..."
-          value={comentarios}
-          onChangeText={setComentarios}
-      />
-    </View>
-    <View style={[styles.tableCellBase4, styles.colStat]}>
-      <CheckBox
-    value={statusChecked}
-    disabled={!checkedItems.every(item => item)}
-    tintColors={{ true: 'black', false: 'gray' }}
-/>
-    </View>
-  </View>
-  </View>
+            <ChecklistComments value={comentarios} onChange={setComentarios} complete={statusChecked} />
             {/* Botón Guardar */}
            <TouchableOpacity
     style={styles.saveButton}
@@ -424,8 +285,6 @@ const handleComplete = async () => {
       </Pressable>
     ))}
   </View>
-        </ScrollView>
-
         {/* Modal */}
         <Modal
             visible={modalVisible}
@@ -450,12 +309,36 @@ const handleComplete = async () => {
         </Modal>
         </ScrollView>
             </KeyboardAvoidingView>
-    </ImageBackground>
+    </View>
 );
 
 };
 
 const styles = StyleSheet.create({
+    measurementsCard: {
+        backgroundColor: '#fff',
+        borderColor: '#e5e9f2',
+        borderWidth: 1,
+        borderRadius: 12,
+        marginHorizontal: 16,
+        padding: 14,
+    },
+    measurementLabel: {
+        color: '#1a1a2e',
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 6,
+        marginTop: 8,
+    },
+    measurementInput: {
+        backgroundColor: '#f8f9fc',
+        borderColor: '#dbe3ef',
+        borderWidth: 1,
+        borderRadius: 10,
+        color: '#1a1a2e',
+        minHeight: 44,
+        paddingHorizontal: 12,
+    },
     loadingText: {
         fontSize: 14,
         textAlign: 'center',
@@ -522,7 +405,7 @@ const styles = StyleSheet.create({
         color: 'white'
     },
     saveButton: {
-        backgroundColor: '#0011ff',
+        backgroundColor: '#0b2d6b',
         padding: 15,
         borderRadius: 8,
         margin: 20,
@@ -540,6 +423,7 @@ const styles = StyleSheet.create({
     },
     imageRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 10,

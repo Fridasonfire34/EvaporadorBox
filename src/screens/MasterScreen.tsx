@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ImageBackground, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Modal, Pressable } from 'react-native';
-import CheckBox from '@react-native-community/checkbox';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ChecklistComments, ChecklistHeader, ChecklistItem, checklistStyles } from '../components/ChecklistUI';
 
 
 const MasterScreen = () => {
@@ -17,6 +17,7 @@ const MasterScreen = () => {
     const [checkedItems, setCheckedItems] = useState(
     Array(10).fill(false)
 );
+    const [checkedSlots, setCheckedSlots] = useState(Array(2).fill(false));
     const { job } = route.params || {};
     const fechaISO = new Date().toISOString();
     const formatFechaLocal = (fechaISO: string) => {
@@ -31,12 +32,15 @@ const MasterScreen = () => {
     };
 
     useEffect(() => {
-        if (checkedItems.every(item => item)) {
+        if (checkedItems.every(item => item) && checkedSlots.every(item => item)) {
             setStatusChecked(true);
         } else {
             setStatusChecked(false);
         }
-    }, [checkedItems]);
+    }, [checkedItems, checkedSlots]);
+
+    // Orden enviado al backend (12 valores): componentes 1-10, slots A-B
+    const buildCheckboxes = () => [...checkedItems, ...checkedSlots];
 
     useEffect(() => {
         const loadUserData = async () => {
@@ -84,10 +88,10 @@ const MasterScreen = () => {
                             job,
                             fecha: fechaISO,
                             nomina: user?.Nomina,
-                            checkboxes: checkedItems,
+                            checkboxes: buildCheckboxes(),
                             comentarios
                           };
-                        try { const response = await fetch('http://192.168.16.146:3002/api/evaporador/incompleteMaster',{
+                        try { const response = await fetch('http://192.168.15.155:3002/api/evaporador/incompleteMaster',{
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -101,7 +105,7 @@ const MasterScreen = () => {
                                       Alert.alert('Enviado', 'Checklist enviado como INCOMPLETO.');
                         
                                       try {
-                                        await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+                                        await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
                                           method: 'POST',
                                         });
                                       } catch (error) {
@@ -128,11 +132,11 @@ const MasterScreen = () => {
               job,
               fecha: fechaISO,
               nomina: user?.Nomina,
-              checkboxes: checkedItems,
+              checkboxes: buildCheckboxes(),
               comentarios
             });
             
-                    try { const response = await fetch ('http://192.168.16.146:3002/api/evaporador/completeMaster', {
+                    try { const response = await fetch ('http://192.168.15.155:3002/api/evaporador/completeMaster', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -141,7 +145,7 @@ const MasterScreen = () => {
                                 job,
                                 fecha: fechaISO,
                                 nomina: user?.Nomina,
-                                checkboxes: checkedItems,
+                                checkboxes: buildCheckboxes(),
                                 comentarios
                             }),
                         });
@@ -162,51 +166,21 @@ const MasterScreen = () => {
                 };
 
     return (
-    <ImageBackground source={require('../assets/bg1-eb.jpg')} style={{ flex: 1 }}>
+    <View style={checklistStyles.background}>
  <KeyboardAvoidingView
   behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Registro de Lecturas */}
-        <View style={styles.headerBox}>
-            <Text style={styles.headerText}>BOM CONFIRMACION:</Text>
-            <Text style={styles.headerText}>ASSEMBLY BOX, ᴍᴀsᴛᴇʀ</Text>
-        </View>
-
-        {/* Instrucciones */}
-        <View style={styles.sectionBox}>
-            <View style={styles.instructionsWrapper}>
-                <Text style={styles.instructionText}>
-                    <Text style={styles.bold}>Instrucciones: </Text>
-                    Garantizar que todos los componentes necesarios se encuentren disponibles antes de iniciar el proceso de ensamble. Primero, identifique el componente en cuestión y compare la cantidad especificada en el check list de referencia con la cantidad disponible. Marque el recuadro correspondiente. En caso de que no se cuente con la cantidad adecuada, registre la discrepancia en el campo de observaciones.
-                </Text>
-            </View>
-        </View>
-
-        {/* Job */}
-        <View style={styles.infoRow}>
-            <Text style={styles.bold2}>FECHA: </Text>
-                                                   <Text style={styles.normal}>{formatFechaLocal(fechaISO)}</Text>
-                                                   <Text style={styles.bold2}>JOB: </Text>
-                                                   <Text style={styles.normal}>{job}</Text>                                               
-                                                   <Text style={styles.bold2}>NOMINA: </Text>
-                                                   <Text style={styles.normal}>{user.Nomina}</Text>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-
-            {/* Tabla insertada aquí */}
-            <View style={styles.tableContainer}>
-    {/* Encabezados */}
-    <View style={styles.tableRowHeader}>
-    <View style={styles.colItem}><Text style={styles.headerTABLE}>ITEM</Text></View>
-    <View style={styles.colDesc}><Text style={styles.headerTABLE}>DESCRIPCIÓN</Text></View>
-    <View style={styles.colPart}><Text style={styles.headerTABLE}>NUM. DE PARTE</Text></View>
-    <View style={styles.colQty}><Text style={styles.headerTABLE}>QTY</Text></View>
-    <View style={styles.colStatus}><Text style={styles.headerTABLE}>STATUS</Text></View>
-</View>
+      <ScrollView contentContainerStyle={checklistStyles.scrollContent} keyboardShouldPersistTaps="handled">
+        <ChecklistHeader
+            title="ASSEMBLY BOX, MASTER"
+            date={formatFechaLocal(fechaISO)}
+            job={job}
+            nomina={user.Nomina}
+            instructions="Garantizar que todos los componentes necesarios se encuentren disponibles antes de iniciar el proceso de ensamble. Primero, identifique el componente en cuestión y compare la cantidad especificada en el check list de referencia con la cantidad disponible. Marque el recuadro correspondiente. En caso de que no se cuente con la cantidad adecuada, registre la discrepancia en el campo de observaciones."
+        />
+        <Text style={checklistStyles.sectionHeading}>Componentes a verificar</Text>
 
     {/* Filas de datos */}
     {[
@@ -221,74 +195,35 @@ const MasterScreen = () => {
     [9, 'PANEL PLUG, SNAP IN, 1/2" ID', '7410258', '6'],
     [10, 'SCREW, FPH, #10-32 X 3/4:, 18-8 SS', '7410231', '12']
 ].map(([item, desc, part, qty], idx) => (
-    <TouchableOpacity
+    <ChecklistItem
         key={idx}
-        style={[
-            styles.tableRow,
-            { backgroundColor: checkedItems[idx] ? '#d0f0c0' : '#fff' }
-        ]}
-        onPress={() => {
+        title={`${item}. ${desc}`}
+        detail={`Núm. de parte: ${part}   ·   Cantidad: ${qty}`}
+        checked={!!checkedItems[idx]}
+        onChange={(value) => {
             const updated = [...checkedItems];
-            updated[idx] = !updated[idx];
+            updated[idx] = value;
             setCheckedItems(updated);
         }}
-    >
-        <View style={[styles.tableCellBase, styles.colItem]}>
-            <Text style={styles.tableText}>{item}</Text>
-        </View>
-        <View style={[styles.tableCellBase, styles.colDesc]}>
-            <Text style={styles.tableText}>{desc}</Text>
-        </View>
-        <View style={[styles.tableCellBase, styles.colPart]}>
-            <Text style={styles.tableText}>{part}</Text>
-        </View>
-        <View style={[styles.tableCellBase,styles.colQty]}>
-            <Text style={styles.tableText}>{qty}</Text>
-        </View>
-        <View style={[styles.tableCellBase, styles.colStatus]}>
-            <CheckBox
-                value={checkedItems[idx]}
-                onValueChange={() => {
-                    const updated = [...checkedItems];
-                    updated[idx] = !updated[idx];
-                    setCheckedItems(updated);
-                }}
-                tintColors={{ true: 'black', false: 'black' }}
-            />
-        </View>
-    </TouchableOpacity>
+    />
 ))}
-</View>
 
- <View style={styles.tableContainer}>
-    <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase3, styles.colOBS]}>
-        <Text style={styles.tableText2}>OSERVACIONES Y COMENTARIOS</Text></View>
-    <View style={[styles.tableCellBase3, styles.colStat]}>
-        <Text style={styles.tableText2}>STATUS</Text></View>
-    </View>
+        <Text style={checklistStyles.sectionHeading}>Validación de 14 slots</Text>
+        <Text style={styles.checklistSectionDescription}>Validar que los 14 slots estén correctamente instalados y dentro de las especificaciones.</Text>
+        {["A) Verificar la geometría de los slots", "B) Verificar contra el fixture de geometría de validación de slots"].map((label, idx) => (
+            <ChecklistItem
+                key={`slots-${idx}`}
+                title={label}
+                checked={checkedSlots[idx]}
+                onChange={(value) => {
+                    const updated = [...checkedSlots];
+                    updated[idx] = value;
+                    setCheckedSlots(updated);
+                }}
+            />
+        ))}
 
-    <View style={styles.tableRow2}>
-    <View style={[styles.tableCellBase3, styles.colOBST]}>
-      <TextInput
-                                style={styles.inputText}
-                                multiline={true}
-                                textAlignVertical="top"
-                                placeholder="Escribe aquí..."
-                                value={comentarios}
-                                onChangeText={setComentarios}
-                            />
-    </View>
-    <View style={[styles.tableCellBase3, styles.colStat]}>
-      <CheckBox
-          value={statusChecked}
-          disabled={!checkedItems.every(item => item)}
-          tintColors={{ true: 'black', false: 'gray' }}
-      />
-      
-    </View>
-  </View>
-  </View>
+            <ChecklistComments value={comentarios} onChange={setComentarios} complete={statusChecked} />
             {/* Botón Guardar */}
              <TouchableOpacity
                                         style={styles.saveButton}
@@ -317,8 +252,6 @@ const MasterScreen = () => {
       </Pressable>
     ))}
   </View>
-        </ScrollView>
-
         {/* Modal */}
         <Modal
             visible={modalVisible}
@@ -343,12 +276,19 @@ const MasterScreen = () => {
         </Modal>
         </ScrollView>
                                     </KeyboardAvoidingView>
-    </ImageBackground>
+    </View>
 );
 
 };
 
 const styles = StyleSheet.create({
+    checklistSectionDescription: {
+        color: '#475569',
+        fontSize: 14,
+        lineHeight: 20,
+        marginHorizontal: 16,
+        marginBottom: 10,
+    },
     loadingText: {
            fontSize: 14,
            textAlign: 'center',
@@ -415,7 +355,7 @@ const styles = StyleSheet.create({
         color: 'white'
     },
     saveButton: {
-        backgroundColor: '#0011ff',
+        backgroundColor: '#0b2d6b',
         padding: 15,
         borderRadius: 8,
         margin: 20,
@@ -433,6 +373,7 @@ const styles = StyleSheet.create({
     },
     imageRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'center',
         alignItems: 'center',
         marginVertical: 10,

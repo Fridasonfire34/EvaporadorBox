@@ -31,7 +31,6 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [focusPassword, setFocusPassword] = useState(false);
-    const [error, setError] = useState('');
     const [focusNomina, setFocusNomina] = useState(false);
     const passwordRef = useRef<TextInput>(null);
 
@@ -93,9 +92,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     const handleLogin = async () => {
     try {
-        setError('');
-
-        const response = await fetch('http://192.168.16.146:3002/api/evaporador/login', {
+        const response = await fetch('http://192.168.15.155:3002/api/evaporador/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -121,7 +118,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             setPassword('');
 
             try {
-                const completeJobsResponse = await fetch('http://192.168.16.146:3002/api/evaporador/completeJobs', {
+                const completeJobsResponse = await fetch('http://192.168.15.155:3002/api/evaporador/completeJobs', {
     method: 'POST',
 });
                 if (!completeJobsResponse.ok) {
